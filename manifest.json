@@ -13,6 +13,6 @@
         }
     ],
     "start_url": "https://kondibence.github.io/cartel-portal/",
-    "display": "fullscreen",
+    "display": "standalone",
     "prefer_related_applications": false
 }
