@@ -1,362 +1,198 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Medellín Empire</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
-  <link rel="manifest" href="./manifest.json"/>
-  <link rel="stylesheet" href="./style.css">
-  <link rel="shortcut icon" href="./icons/192.png" type="image/png">
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>The Medellín Empire</title>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+	<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+	<link rel="manifest" href="./manifest.json"/>
+	<link rel="stylesheet" href="./style.css">
+	<link rel="shortcut icon" href="./icons/192.png" type="image/png">
 </head>
 <body>
-  <div id="app">
-    
-    <!-- NAVBAR -->
-    <nav class="navbar">
-      <a class="nav-logo" href="#">THE <span>MEDELLÍN</span> EMPIRE</a>
-      <div class="nav-actions">
-        <button v-if="!isAdmin" class="nav-btn admin-btn desktop-only" @click="showLogin=true">
-          🔐 Admin belépés
-        </button>
-        <button v-else class="nav-btn admin-logged desktop-only" @click="logout">
-          ⚡ {{ adminUser }} — Kilépés
-        </button>
-        <button class="hamburger" @click="menuOpen=!menuOpen">
-          <span :style="menuOpen?'transform:rotate(45deg) translate(5px,5px)':''"></span>
-          <span :style="menuOpen?'opacity:0':''"></span>
-          <span :style="menuOpen?'transform:rotate(-45deg) translate(5px,-5px)':''"></span>
-        </button>
-      </div>
-    </nav>
-    
-    <!-- ADMIN BAR -->
-    <div class="admin-bar" v-if="isAdmin">
-      <div class="admin-bar-left">
-        <span class="admin-badge">ADMIN MÓD</span>
-        <span>Bejelentkezve: <strong>{{ adminUser }}</strong></span>
-      </div>
-      <button class="admin-logout" @click="logout">Kilépés</button>
-    </div>
-    
-    <!-- MOBILE MENU -->
-    <div class="mobile-menu" :class="{open: menuOpen}">
-      <a class="mobile-nav-link" @click="menuOpen=false">📰 Hírek</a>
-      <a v-if="!isAdmin" class="mobile-nav-link admin-link" @click="showLogin=true; menuOpen=false">🔐 Admin belépés</a>
-      <a v-else class="mobile-nav-link admin-link" @click="logout(); menuOpen=false">🚪 Admin kilépés</a>
-    </div>
-    
-    <!-- LOGIN MODAL -->
-    <div class="modal-overlay" v-if="showLogin" @click.self="closeLogin">
-      <div class="modal-panel">
-        <div class="modal-header">
-          <div class="modal-icon">🔐</div>
-          <h2>Admin Belépés</h2>
-          <p>Csak jogosult személyek léphetnek be</p>
-        </div>
-        <div class="login-error" v-if="loginError">{{ loginError }}</div>
-        <div class="form-group">
-          <label class="form-label">Felhasználónév</label>
-          <input class="form-input" v-model="loginUsername" placeholder="admin" @keyup.enter="doLogin" autofocus />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Jelszó</label>
-          <input class="form-input" type="password" v-model="loginPassword" placeholder="••••••••" @keyup.enter="doLogin" />
-        </div>
-        <button class="btn-full btn-primary" @click="doLogin">Belépés</button>
-        <button class="btn-full btn-cancel" @click="closeLogin">Mégsem</button>
-      </div>
-    </div>
-    
-    <!-- EDIT / CREATE MODAL -->
-    <div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal=false">
-      <div class="modal-panel wide">
-        <div class="modal-header">
-          <div class="modal-icon">{{ editingId ? '✏️' : '➕' }}</div>
-          <h2>{{ editingId ? 'Hír Szerkesztése' : 'Új Hír Létrehozása' }}</h2>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cím *</label>
-          <input class="form-input" v-model="editForm.title" placeholder="Hír címe..." />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Leírás</label>
-          <textarea class="form-textarea" v-model="editForm.desc" placeholder="Rövid leírás..."></textarea>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Kategória</label>
-            <select class="form-select" v-model="editForm.tag">
-              <option>Háború</option>
-              <option>Üzlet</option>
-              <option>Hatóság</option>
-              <option>Terület</option>
-              <option>Esemény</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Borítókép</label>
-          <div class="img-preview-wrap" v-if="editForm.imagePreview">
-            <img :src="editForm.imagePreview" class="img-preview" />
-            <button class="img-remove-btn" @click="removeImage">✕ Eltávolítás</button>
-          </div>
-          <div class="img-upload-area" v-else>
-            <input type="file" accept="image/*" @change="onImagePicked" />
-            <div class="img-upload-icon">🖼️</div>
-            <div class="img-upload-label">Kattints vagy húzz ide egy képet</div>
-            <div class="img-upload-hint">JPG, PNG, WEBP — max 10 MB</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Szerző neve</label>
-          <input class="form-input" v-model="editForm.authorName" placeholder="Pl. El Reportero" />
-        </div>
-        <button class="btn-full btn-primary" @click="saveNews" :disabled="!editForm.title.trim()">
-          💾 Mentés
-        </button>
-        <button class="btn-full btn-cancel" @click="showEditModal=false">Mégsem</button>
-      </div>
-    </div>
-    
-    <!-- MAIN -->
-    <main class="main">
-      
-      <div class="page-title">
-        <h1>THE <em>MEDELLÍN</em> EMPIRE</h1>
-        <p><span class="live-dot"></span>{{ onlineCount.toLocaleString('hu') }} játékos online most</p>
-      </div>
-      
-      <div class="breaking">
-        <span class="breaking-badge">BREAKING</span>
-        <p>A Déli Negyed irányítása megváltozott — Los Muertos vs. Vörös Kígyók!</p>
-      </div>
-      
-      <button class="create-news-btn" v-if="isAdmin" @click="openCreate">
-        ＋ Új hír létrehozása
-      </button>
-      
-      <div
-      v-for="(item, i) in news"
-      :key="item.id"
-      class="card"
-      :style="`animation-delay:${i*0.07}s`"
-      >
-      <img v-if="item.image" :src="item.image" class="card-image-placeholder" style="object-fit:cover;font-size:0;" />
-      <div v-else class="card-image-placeholder">{{ item.emoji }}</div>
-      <div class="card-body">
-        <div class="card-meta">
-          <span class="tag" :class="item.tagColor">{{ item.tag }}</span>
-          <span class="card-time">{{ item.time }}</span>
-        </div>
-        <div class="card-title">{{ item.title }}</div>
-        <div class="card-desc">{{ item.desc }}</div>
-        <div class="card-footer">
-          <div class="author">
-            <div class="avatar" :style="`background:${item.author.bg}22;color:${item.author.bg}`">{{ item.author.initials }}</div>
-            <div>
-              <div class="author-name">{{ item.author.name }}</div>
-              <div class="author-role">{{ item.author.role }}</div>
-            </div>
-          </div>
-          <div class="card-stats">
-            <span class="stat">👁 {{ item.views }}</span>
-            <span class="stat">💬 {{ item.comments }}</span>
-          </div>
-        </div>
-        <div class="admin-actions" v-if="isAdmin">
-          <button class="action-btn edit-btn"   @click="openEdit(item)">✏️ Szerkesztés</button>
-          <button class="action-btn delete-btn" @click="deleteNews(item.id)">🗑 Törlés</button>
-        </div>
-      </div>
-    </div>
-    
-    <div v-if="news.length===0" style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px;">
-      Nincsenek hírek. Admin módban adj hozzá újakat!
-    </div>
-    
-  </main>
-  
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <button class="bottom-nav-item active">
-      <span class="icon">📰</span>Hírek
-    </button>
-    <button class="bottom-nav-item" v-if="isAdmin" @click="openCreate">
-      <span class="icon">➕</span>Létrehozás
-    </button>
-    <button class="bottom-nav-item" @click="isAdmin ? logout() : (showLogin=true)">
-      <span class="icon">{{ isAdmin ? '⚡' : '🔐' }}</span>{{ isAdmin ? 'Kilépés' : 'Admin' }}
-    </button>
-  </nav>
-  
+	<div id="app">
+		
+		<!-- NAVBAR -->
+		<nav class="navbar">
+			<a class="nav-logo" href="#">THE <span>MEDELLÍN</span> EMPIRE</a>
+			<div class="nav-actions">
+				<button v-if="!isAdmin" class="nav-btn admin-btn desktop-only" @click="showLogin=true">
+					🔐 Admin belépés
+				</button>
+				<button v-else class="nav-btn admin-logged desktop-only" @click="logout">
+					⚡ {{ adminUser }} — Kilépés
+				</button>
+				<button class="hamburger" @click="menuOpen=!menuOpen">
+					<span :style="menuOpen?'transform:rotate(45deg) translate(5px,5px)':''"></span>
+					<span :style="menuOpen?'opacity:0':''"></span>
+					<span :style="menuOpen?'transform:rotate(-45deg) translate(5px,-5px)':''"></span>
+				</button>
+			</div>
+		</nav>
+		
+		<!-- ADMIN BAR -->
+		<div class="admin-bar" v-if="isAdmin">
+			<div class="admin-bar-left">
+				<span class="admin-badge">ADMIN MÓD</span>
+				<span>Bejelentkezve: <strong>{{ adminUser }}</strong></span>
+			</div>
+			<button class="admin-logout" @click="logout">Kilépés</button>
+		</div>
+		
+		<!-- MOBILE MENU -->
+		<div class="mobile-menu" :class="{open: menuOpen}">
+			<a class="mobile-nav-link" @click="menuOpen=false">📰 Hírek</a>
+			<a v-if="!isAdmin" class="mobile-nav-link admin-link" @click="showLogin=true; menuOpen=false">🔐 Admin belépés</a>
+			<a v-else class="mobile-nav-link admin-link" @click="logout(); menuOpen=false">🚪 Admin kilépés</a>
+		</div>
+		
+		<!-- LOGIN MODAL -->
+		<div class="modal-overlay" v-if="showLogin" @click.self="closeLogin">
+			<div class="modal-panel">
+				<div class="modal-header">
+					<div class="modal-icon">🔐</div>
+					<h2>Admin Belépés</h2>
+					<p>Csak jogosult személyek léphetnek be</p>
+				</div>
+				<div class="login-error" v-if="loginError">{{ loginError }}</div>
+				<div class="form-group">
+					<label class="form-label">Felhasználónév</label>
+					<input class="form-input" v-model="loginUsername" placeholder="admin" @keyup.enter="doLogin" autofocus />
+				</div>
+				<div class="form-group">
+					<label class="form-label">Jelszó</label>
+					<input class="form-input" type="password" v-model="loginPassword" placeholder="••••••••" @keyup.enter="doLogin" />
+				</div>
+				<button class="btn-full btn-primary" @click="doLogin">Belépés</button>
+				<button class="btn-full btn-cancel" @click="closeLogin">Mégsem</button>
+			</div>
+		</div>
+		
+		<!-- EDIT / CREATE MODAL -->
+		<div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal=false">
+			<div class="modal-panel wide">
+				<div class="modal-header">
+					<div class="modal-icon">{{ editingId ? '✏️' : '➕' }}</div>
+					<h2>{{ editingId ? 'Hír Szerkesztése' : 'Új Hír Létrehozása' }}</h2>
+				</div>
+				<div class="form-group">
+					<label class="form-label">Cím *</label>
+					<input class="form-input" v-model="editForm.title" placeholder="Hír címe..." />
+				</div>
+				<div class="form-group">
+					<label class="form-label">Leírás</label>
+					<textarea class="form-textarea" v-model="editForm.desc" placeholder="Rövid leírás..."></textarea>
+				</div>
+				<div class="form-row">
+					<div class="form-group">
+						<label class="form-label">Kategória</label>
+						<select class="form-select" v-model="editForm.tag">
+							<option>Háború</option>
+							<option>Üzlet</option>
+							<option>Hatóság</option>
+							<option>Terület</option>
+							<option>Esemény</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">Borítókép</label>
+					<div class="img-preview-wrap" v-if="editForm.imagePreview">
+						<img :src="editForm.imagePreview" class="img-preview" />
+						<button class="img-remove-btn" @click="removeImage">✕ Eltávolítás</button>
+					</div>
+					<div class="img-upload-area" v-else>
+						<input type="file" accept="image/*" @change="onImagePicked" />
+						<div class="img-upload-icon">🖼️</div>
+						<div class="img-upload-label">Kattints vagy húzz ide egy képet</div>
+						<div class="img-upload-hint">JPG, PNG, WEBP — max 10 MB</div>
+					</div>
+				</div>
+				<div class="form-group">
+					<label class="form-label">Szerző neve</label>
+					<input class="form-input" v-model="editForm.authorName" placeholder="Pl. El Reportero" />
+				</div>
+				<button class="btn-full btn-primary" @click="saveNews" :disabled="!editForm.title.trim()">
+					💾 Mentés
+				</button>
+				<button class="btn-full btn-cancel" @click="showEditModal=false">Mégsem</button>
+			</div>
+		</div>
+		
+		<!-- MAIN -->
+		<main class="main">
+			
+			<div class="page-title">
+				<h1>THE <em>MEDELLÍN</em> EMPIRE</h1>
+				<p><span class="live-dot"></span>{{ onlineCount.toLocaleString('hu') }} játékos online most</p>
+			</div>
+			
+			<div class="breaking">
+				<span class="breaking-badge">BREAKING</span>
+				<p>A Déli Negyed irányítása megváltozott — Los Muertos vs. Vörös Kígyók!</p>
+			</div>
+			
+			<button class="create-news-btn" v-if="isAdmin" @click="openCreate">
+				＋ Új hír létrehozása
+			</button>
+			
+			<div
+			v-for="(item, i) in news"
+			:key="item.id"
+			class="card"
+			:style="`animation-delay:${i*0.07}s`"
+			>
+			<img v-if="item.image" :src="item.image" class="card-image-placeholder" style="object-fit:cover;font-size:0;" />
+			<div v-else class="card-image-placeholder">{{ item.emoji }}</div>
+			<div class="card-body">
+				<div class="card-meta">
+					<span class="tag" :class="item.tagColor">{{ item.tag }}</span>
+					<span class="card-time">{{ item.time }}</span>
+				</div>
+				<div class="card-title">{{ item.title }}</div>
+				<div class="card-desc">{{ item.desc }}</div>
+				<div class="card-footer">
+					<div class="author">
+						<div class="avatar" :style="`background:${item.author.bg}22;color:${item.author.bg}`">{{ item.author.initials }}</div>
+						<div>
+							<div class="author-name">{{ item.author.name }}</div>
+							<div class="author-role">{{ item.author.role }}</div>
+						</div>
+					</div>
+					<div class="card-stats">
+						<span class="stat">👁 {{ item.views }}</span>
+						<span class="stat">💬 {{ item.comments }}</span>
+					</div>
+				</div>
+				<div class="admin-actions" v-if="isAdmin">
+					<button class="action-btn edit-btn"   @click="openEdit(item)">✏️ Szerkesztés</button>
+					<button class="action-btn delete-btn" @click="deleteNews(item.id)">🗑 Törlés</button>
+				</div>
+			</div>
+		</div>
+		
+		<div v-if="news.length===0" style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px;">
+			Nincsenek hírek. Admin módban adj hozzá újakat!
+		</div>
+		
+	</main>
+	
+	<!-- BOTTOM NAV -->
+	<nav class="bottom-nav">
+		<button class="bottom-nav-item active">
+			<span class="icon">📰</span>Hírek
+		</button>
+		<button class="bottom-nav-item" v-if="isAdmin" @click="openCreate">
+			<span class="icon">➕</span>Létrehozás
+		</button>
+		<button class="bottom-nav-item" @click="isAdmin ? logout() : (showLogin=true)">
+			<span class="icon">{{ isAdmin ? '⚡' : '🔐' }}</span>{{ isAdmin ? 'Kilépés' : 'Admin' }}
+		</button>
+	</nav>
+	
 </div>
 
-<script>
-  const { createApp, ref, reactive } = Vue;
-  
-  createApp({
-    setup() {
-      const isAdmin    = ref(false);
-      const adminUser  = ref('');
-      const showLogin  = ref(false);
-      const menuOpen   = ref(false);
-      const loginUsername = ref('');
-      const loginPassword = ref('');
-      const loginError    = ref('');
-      const onlineCount   = ref(2841);
-      
-      const showEditModal = ref(false);
-      const editingId     = ref(null);
-      const editForm = reactive({ title:'', desc:'', tag:'Háború', emoji:'📰', authorName:'', imagePreview: null });
-      
-      setInterval(() => { onlineCount.value += Math.floor(Math.random()*7)-3; }, 3000);
-      
-      const tagColorMap = { 'Háború':'red','Hatóság':'blue','Terület':'green','Üzlet':'','Esemény':'purple' };
-      
-      const news = ref([
-      {
-        id:1, emoji:'🔫', tag:'Háború', tagColor:'red', time:'12p',
-        title:'Vérfürdő a Kikötőnegyedben — Los Muertos átvette az irányítást',
-        desc:'Hajnali összecsapásokban legalább 6 bandatag vesztette életét. A terület mostantól a Los Muertos befolyási övezete.',
-        author:{ name:'El Reportero', role:'Helyszíni tudósító', initials:'ER', bg:'#e74c3c' },
-        views:'14.2e', comments:38
-      },
-      {
-        id:2, emoji:'💰', tag:'Üzlet', tagColor:'', time:'45p',
-        title:'Fekete piac: rekord forgalom a hétvégén',
-        desc:'A városban keringő pénz mennyisége 40%-kal nőtt az elmúlt héten. Elemzők szerint új szállítmány érkezett.',
-        author:{ name:'María Contadora', role:'Gazdasági szerkesztő', initials:'MC', bg:'#e8c14a' },
-        views:'9.8e', comments:21
-      },
-      {
-        id:3, emoji:'🚔', tag:'Hatóság', tagColor:'blue', time:'2ó',
-        title:'Nagyszabású razzia — 12 őrizetbe vétel a Déli Negyedben',
-        desc:'A rendőrség titokban szervezett akcióban csapott le több ismert személyre. Kik az ügynökök?',
-        author:{ name:'Sombra', role:'Névtelen forrás', initials:'S', bg:'#9b59b6' },
-        views:'22.5e', comments:94
-      },
-      {
-        id:4, emoji:'🗺️', tag:'Terület', tagColor:'green', time:'4ó',
-        title:'Új szövetség alakult — Vörös Kígyók és az Északi Klán tárgyalóasztalhoz ültek',
-        desc:'Meglepő fordulat: a két rivális banda képviselői titkos találkozón vett részt. Mi lehet a tét?',
-        author:{ name:'Don Periodista', role:'Főszerkesztő', initials:'DP', bg:'#2ecc71' },
-        views:'31.0e', comments:117
-      }
-      ]);
-      
-      let nextId = 100;
-      
-      function doLogin() {
-        if (loginUsername.value.trim() === 'admin' && loginPassword.value === 'admin123') {
-          isAdmin.value = true;
-          adminUser.value = 'admin';
-          showLogin.value = false;
-          loginError.value = '';
-          loginUsername.value = '';
-          loginPassword.value = '';
-        } else {
-          loginError.value = 'Hibás felhasználónév vagy jelszó!';
-        }
-      }
-      
-      function closeLogin() {
-        showLogin.value = false;
-        loginError.value = '';
-        loginUsername.value = '';
-        loginPassword.value = '';
-      }
-      
-      function logout() {
-        isAdmin.value = false;
-        adminUser.value = '';
-      }
-      
-      function openCreate() {
-        editingId.value = null;
-        editForm.title = '';
-        editForm.desc = '';
-        editForm.tag = 'Háború';
-        editForm.emoji = '📰';
-        editForm.authorName = 'Admin';
-        editForm.imagePreview = null;
-        showEditModal.value = true;
-      }
-      
-      function openEdit(item) {
-        editingId.value = item.id;
-        editForm.title = item.title;
-        editForm.desc = item.desc;
-        editForm.tag = item.tag;
-        editForm.emoji = item.emoji;
-        editForm.authorName = item.author.name;
-        editForm.imagePreview = item.image || null;
-        showEditModal.value = true;
-      }
-      
-      function onImagePicked(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => { editForm.imagePreview = ev.target.result; };
-        reader.readAsDataURL(file);
-      }
-      
-      function removeImage() {
-        editForm.imagePreview = null;
-      }
-      
-      function saveNews() {
-        if (!editForm.title.trim()) return;
-        if (editingId.value !== null) {
-          const idx = news.value.findIndex(n => n.id === editingId.value);
-          if (idx !== -1) {
-            news.value[idx] = {
-              ...news.value[idx],
-              title: editForm.title,
-              desc:  editForm.desc,
-              tag:   editForm.tag,
-              tagColor: tagColorMap[editForm.tag] ?? '',
-              emoji: editForm.emoji,
-              image: editForm.imagePreview || null,
-              author: { ...news.value[idx].author, name: editForm.authorName }
-            };
-          }
-        } else {
-          const nm = editForm.authorName || 'Admin';
-          const initials = nm.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2) || 'AD';
-          news.value.unshift({
-            id: nextId++,
-            emoji: editForm.emoji || '📰',
-            image: editForm.imagePreview || null,
-            tag: editForm.tag,
-            tagColor: tagColorMap[editForm.tag] ?? '',
-            time: 'most',
-            title: editForm.title,
-            desc:  editForm.desc,
-            author: { name: nm, role: 'Adminisztrátor', initials, bg:'#e8c14a' },
-            views: '0', comments: 0
-          });
-        }
-        showEditModal.value = false;
-      }
-      
-      function deleteNews(id) {
-        if (confirm('Biztosan törlöd ezt a hírt?')) {
-          news.value = news.value.filter(n => n.id !== id);
-        }
-      }
-      
-      return {
-        isAdmin, adminUser, showLogin, menuOpen,
-        loginUsername, loginPassword, loginError,
-        onlineCount, news, showEditModal, editingId, editForm,
-        doLogin, closeLogin, logout, openCreate, openEdit, saveNews, deleteNews,
-        onImagePicked, removeImage
-      };
-    }
-  }).mount('#app');
-</script>
+<script src="./script.js"></script>
 </body>
 </html>
