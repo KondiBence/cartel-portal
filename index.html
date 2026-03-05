@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="hu">
+
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<title>The Medellín Empire</title>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
-	<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
-	<link rel="manifest" href="./manifest.json"/>
+	<link
+		href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap"
+		rel="stylesheet" />
 	<link rel="stylesheet" href="./style.css">
-	<link rel="shortcut icon" href="./icons/192.png" type="image/png">
+	<link rel="manifest" href="./manifest.json">
 </head>
+
 <body>
 	<div id="app">
-		
+
 		<!-- NAVBAR -->
 		<nav class="navbar">
 			<a class="nav-logo" href="#">THE <span>MEDELLÍN</span> EMPIRE</a>
@@ -30,7 +33,7 @@
 				</button>
 			</div>
 		</nav>
-		
+
 		<!-- ADMIN BAR -->
 		<div class="admin-bar" v-if="isAdmin">
 			<div class="admin-bar-left">
@@ -39,14 +42,15 @@
 			</div>
 			<button class="admin-logout" @click="logout">Kilépés</button>
 		</div>
-		
+
 		<!-- MOBILE MENU -->
 		<div class="mobile-menu" :class="{open: menuOpen}">
 			<a class="mobile-nav-link" @click="menuOpen=false">📰 Hírek</a>
-			<a v-if="!isAdmin" class="mobile-nav-link admin-link" @click="showLogin=true; menuOpen=false">🔐 Admin belépés</a>
+			<a v-if="!isAdmin" class="mobile-nav-link admin-link" @click="showLogin=true; menuOpen=false">🔐 Admin
+				belépés</a>
 			<a v-else class="mobile-nav-link admin-link" @click="logout(); menuOpen=false">🚪 Admin kilépés</a>
 		</div>
-		
+
 		<!-- LOGIN MODAL -->
 		<div class="modal-overlay" v-if="showLogin" @click.self="closeLogin">
 			<div class="modal-panel">
@@ -58,17 +62,19 @@
 				<div class="login-error" v-if="loginError">{{ loginError }}</div>
 				<div class="form-group">
 					<label class="form-label">Felhasználónév</label>
-					<input class="form-input" v-model="loginUsername" placeholder="admin" @keyup.enter="doLogin" autofocus />
+					<input class="form-input" v-model="loginUsername" placeholder="admin" @keyup.enter="doLogin"
+						autofocus />
 				</div>
 				<div class="form-group">
 					<label class="form-label">Jelszó</label>
-					<input class="form-input" type="password" v-model="loginPassword" placeholder="••••••••" @keyup.enter="doLogin" />
+					<input class="form-input" type="password" v-model="loginPassword" placeholder="••••••••"
+						@keyup.enter="doLogin" />
 				</div>
 				<button class="btn-full btn-primary" @click="doLogin">Belépés</button>
 				<button class="btn-full btn-cancel" @click="closeLogin">Mégsem</button>
 			</div>
 		</div>
-		
+
 		<!-- EDIT / CREATE MODAL -->
 		<div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal=false">
 			<div class="modal-panel wide">
@@ -119,80 +125,78 @@
 				<button class="btn-full btn-cancel" @click="showEditModal=false">Mégsem</button>
 			</div>
 		</div>
-		
+
 		<!-- MAIN -->
 		<main class="main">
-			
+
 			<div class="page-title">
 				<h1>THE <em>MEDELLÍN</em> EMPIRE</h1>
 				<p><span class="live-dot"></span>{{ onlineCount.toLocaleString('hu') }} játékos online most</p>
 			</div>
-			
+
 			<div class="breaking">
 				<span class="breaking-badge">BREAKING</span>
 				<p>A Déli Negyed irányítása megváltozott — Los Muertos vs. Vörös Kígyók!</p>
 			</div>
-			
+
 			<button class="create-news-btn" v-if="isAdmin" @click="openCreate">
 				＋ Új hír létrehozása
 			</button>
-			
-			<div
-			v-for="(item, i) in news"
-			:key="item.id"
-			class="card"
-			:style="`animation-delay:${i*0.07}s`"
-			>
-			<img v-if="item.image" :src="item.image" class="card-image-placeholder" style="object-fit:cover;font-size:0;" />
-			<div v-else class="card-image-placeholder">{{ item.emoji }}</div>
-			<div class="card-body">
-				<div class="card-meta">
-					<span class="tag" :class="item.tagColor">{{ item.tag }}</span>
-					<span class="card-time">{{ item.time }}</span>
-				</div>
-				<div class="card-title">{{ item.title }}</div>
-				<div class="card-desc">{{ item.desc }}</div>
-				<div class="card-footer">
-					<div class="author">
-						<div class="avatar" :style="`background:${item.author.bg}22;color:${item.author.bg}`">{{ item.author.initials }}</div>
-						<div>
-							<div class="author-name">{{ item.author.name }}</div>
-							<div class="author-role">{{ item.author.role }}</div>
+
+			<div v-for="(item, i) in news" :key="item.id" class="card" :style="`animation-delay:${i*0.07}s`">
+				<img v-if="item.image" :src="item.image" class="card-image-placeholder"
+					style="object-fit:cover;font-size:0;" />
+				<div v-else class="card-image-placeholder">{{ item.emoji }}</div>
+				<div class="card-body">
+					<div class="card-meta">
+						<span class="tag" :class="item.tagColor">{{ item.tag }}</span>
+						<span class="card-time">{{ item.time }}</span>
+					</div>
+					<div class="card-title">{{ item.title }}</div>
+					<div class="card-desc">{{ item.desc }}</div>
+					<div class="card-footer">
+						<div class="author">
+							<div class="avatar" :style="`background:${item.author.bg}22;color:${item.author.bg}`">{{
+								item.author.initials }}</div>
+							<div>
+								<div class="author-name">{{ item.author.name }}</div>
+								<div class="author-role">{{ item.author.role }}</div>
+							</div>
+						</div>
+						<div class="card-stats">
+							<span class="stat">👁 {{ item.views }}</span>
+							<span class="stat">💬 {{ item.comments }}</span>
 						</div>
 					</div>
-					<div class="card-stats">
-						<span class="stat">👁 {{ item.views }}</span>
-						<span class="stat">💬 {{ item.comments }}</span>
+					<div class="admin-actions" v-if="isAdmin">
+						<button class="action-btn edit-btn" @click="openEdit(item)">✏️ Szerkesztés</button>
+						<button class="action-btn delete-btn" @click="deleteNews(item.id)">🗑 Törlés</button>
 					</div>
 				</div>
-				<div class="admin-actions" v-if="isAdmin">
-					<button class="action-btn edit-btn"   @click="openEdit(item)">✏️ Szerkesztés</button>
-					<button class="action-btn delete-btn" @click="deleteNews(item.id)">🗑 Törlés</button>
-				</div>
 			</div>
-		</div>
-		
-		<div v-if="news.length===0" style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px;">
-			Nincsenek hírek. Admin módban adj hozzá újakat!
-		</div>
-		
-	</main>
-	
-	<!-- BOTTOM NAV -->
-	<nav class="bottom-nav">
-		<button class="bottom-nav-item active">
-			<span class="icon">📰</span>Hírek
-		</button>
-		<button class="bottom-nav-item" v-if="isAdmin" @click="openCreate">
-			<span class="icon">➕</span>Létrehozás
-		</button>
-		<button class="bottom-nav-item" @click="isAdmin ? logout() : (showLogin=true)">
-			<span class="icon">{{ isAdmin ? '⚡' : '🔐' }}</span>{{ isAdmin ? 'Kilépés' : 'Admin' }}
-		</button>
-	</nav>
-	
-</div>
 
-<script src="./script.js"></script>
+			<div v-if="news.length===0" style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px;">
+				Nincsenek hírek. Admin módban adj hozzá újakat!
+			</div>
+
+		</main>
+
+		<!-- BOTTOM NAV -->
+		<nav class="bottom-nav">
+			<button class="bottom-nav-item active">
+				<span class="icon">📰</span>Hírek
+			</button>
+			<button class="bottom-nav-item" v-if="isAdmin" @click="openCreate">
+				<span class="icon">➕</span>Létrehozás
+			</button>
+			<button class="bottom-nav-item" @click="isAdmin ? logout() : (showLogin=true)">
+				<span class="icon">{{ isAdmin ? '⚡' : '🔐' }}</span>{{ isAdmin ? 'Kilépés' : 'Admin' }}
+			</button>
+		</nav>
+
+	</div>
+
+	<script src="./script.js"></script>
 </body>
+
 </html>
