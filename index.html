@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Medellín Empire</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1a0f0a;
+      --surface: #241510;
+      --surface2: #2e1b11;
+      --border: rgba(232,193,74,0.10);
+      --accent: #e8c14a;
+      --accent2: #c0392b;
+      --green: #2ecc71;
+      --text: #f5ede0;
+      --muted: #8a7a68;
+      --radius: 18px;
+    }
+
+    html { background: var(--bg); }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse 90% 50% at 50% -10%, rgba(192,57,43,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(232,193,74,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 10% 60%, rgba(120,30,10,0.25) 0%, transparent 60%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(20,10,6,0.92);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(232,193,74,0.15);
+      padding: 0 16px; height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px; letter-spacing: 3px;
+      color: var(--accent); text-decoration: none; line-height: 1;
+    }
+    .nav-logo span { color: var(--accent2); }
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+    .nav-btn {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 10px; padding: 7px 14px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .nav-btn:hover { background: var(--surface); border-color: rgba(232,193,74,0.25); }
+    .nav-btn.admin-btn {
+      background: rgba(192,57,43,0.2); border: 1px solid rgba(192,57,43,0.4);
+      color: #e74c3c; font-weight: 600; display: flex; align-items: center; gap: 6px;
+    }
+    .nav-btn.admin-btn:hover { background: rgba(192,57,43,0.35); }
+    .nav-btn.admin-logged {
+      background: rgba(232,193,74,0.15); border-color: rgba(232,193,74,0.35);
+      color: var(--accent);
+    }
+    .hamburger {
+      display: none; flex-direction: column; gap: 5px;
+      cursor: pointer; padding: 4px; background: none; border: none;
+    }
+    .hamburger span {
+      display: block; width: 22px; height: 2px;
+      background: var(--text); border-radius: 2px; transition: all 0.3s;
+    }
+
+    /* MOBILE MENU */
+    .mobile-menu {
+      display: none; position: fixed; top: 58px; left: 0; right: 0;
+      background: rgba(20,10,6,0.97); backdrop-filter: blur(20px);
+      z-index: 99; padding: 16px; border-bottom: 1px solid var(--border);
+      flex-direction: column; gap: 8px; animation: slideDown 0.2s ease;
+    }
+    .mobile-menu.open { display: flex; }
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .mobile-nav-link {
+      padding: 12px 14px; border-radius: 12px; background: var(--surface2);
+      color: var(--text); font-size: 15px; font-weight: 500; cursor: pointer;
+      border: 1px solid var(--border); transition: background 0.2s;
+      text-decoration: none; display: block;
+    }
+    .mobile-nav-link:hover { background: var(--surface); }
+    .mobile-nav-link.admin-link { color: #e74c3c; }
+
+    /* MODAL OVERLAY */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.78); backdrop-filter: blur(6px);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      padding: 20px; animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal-panel {
+      background: var(--surface); border: 1px solid rgba(192,57,43,0.3);
+      border-radius: 20px; padding: 28px 24px;
+      width: 100%; max-width: 380px;
+      animation: popUp 0.25s ease;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(232,193,74,0.04);
+    }
+    .modal-panel.wide { max-width: 440px; }
+    @keyframes popUp {
+      from { opacity: 0; transform: scale(0.94) translateY(12px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .modal-header { text-align: center; margin-bottom: 22px; }
+    .modal-icon { font-size: 34px; margin-bottom: 8px; }
+    .modal-header h2 {
+      font-family: 'Bebas Neue', sans-serif; font-size: 26px;
+      letter-spacing: 3px; color: var(--accent);
+    }
+    .modal-header p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    .form-group { margin-bottom: 13px; }
+    .form-label {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      letter-spacing: 0.5px; text-transform: uppercase;
+      margin-bottom: 5px; display: block;
+    }
+    .form-input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 14px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 15px;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: rgba(232,193,74,0.4); }
+    .form-input::placeholder { color: var(--muted); }
+    .form-textarea {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 14px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; resize: vertical; min-height: 80px;
+      transition: border-color 0.2s;
+    }
+    .form-textarea:focus { border-color: rgba(232,193,74,0.4); }
+    .form-select {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 11px 14px; color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      outline: none; appearance: none; cursor: pointer;
+    }
+    .form-row { display: flex; gap: 10px; }
+    .form-row .form-group { flex: 1; }
+
+    .login-error {
+      background: rgba(192,57,43,0.18); border: 1px solid rgba(192,57,43,0.35);
+      border-radius: 10px; padding: 10px 14px; font-size: 13px;
+      color: #e74c3c; margin-bottom: 14px; text-align: center;
+    }
+    .btn-full {
+      width: 100%; padding: 13px; border-radius: 12px; border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #1a0f0a; }
+    .btn-primary:hover { background: #f0cd5a; transform: translateY(-1px); }
+    .btn-cancel {
+      background: var(--surface2); color: var(--muted);
+      margin-top: 8px; border: 1px solid var(--border);
+    }
+    .btn-cancel:hover { color: var(--text); }
+
+    /* ADMIN BAR */
+    .admin-bar {
+      background: rgba(192,57,43,0.10); border-bottom: 1px solid rgba(192,57,43,0.22);
+      padding: 7px 16px; display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px; color: #e74c3c; font-weight: 500;
+      position: sticky; top: 58px; z-index: 90; backdrop-filter: blur(10px);
+    }
+    .admin-bar-left { display: flex; align-items: center; gap: 8px; }
+    .admin-badge {
+      background: rgba(192,57,43,0.3); border: 1px solid rgba(192,57,43,0.4);
+      border-radius: 6px; padding: 2px 8px;
+      font-size: 10px; letter-spacing: 1px; font-family: 'Bebas Neue', sans-serif;
+    }
+    .admin-logout {
+      background: none; border: 1px solid rgba(192,57,43,0.3);
+      border-radius: 7px; color: var(--muted); font-size: 11px;
+      padding: 3px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: all 0.2s;
+    }
+    .admin-logout:hover { color: #e74c3c; border-color: rgba(192,57,43,0.5); }
+
+    /* MAIN */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 520px; margin: 0 auto; padding: 0 14px;
+    }
+
+    /* PAGE TITLE */
+    .page-title {
+      text-align: center; padding: 28px 0 20px;
+      animation: fadeUp 0.5s ease both;
+    }
+    .page-title h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(30px, 9vw, 48px);
+      letter-spacing: 4px; color: var(--text); line-height: 1;
+    }
+    .page-title h1 em { color: var(--accent); font-style: normal; }
+    .page-title p { margin-top: 6px; color: var(--muted); font-size: 13px; letter-spacing: 0.5px; }
+    .live-dot {
+      display: inline-block; width: 7px; height: 7px;
+      background: var(--green); border-radius: 50%;
+      margin-right: 5px; animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:0.4; transform:scale(0.7); }
+    }
+
+    /* BREAKING */
+    .breaking {
+      background: linear-gradient(135deg, #8b1a0f, var(--accent2));
+      border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 12px;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+    .breaking-badge {
+      font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 2px;
+      background: rgba(0,0,0,0.35); padding: 3px 8px; border-radius: 6px;
+      white-space: nowrap; color: #fff;
+    }
+    .breaking p { font-size: 13px; font-weight: 500; color: #fff; line-height: 1.4; }
+
+    /* IMAGE UPLOAD */
+    .img-upload-area {
+      width: 100%; height: 140px;
+      border: 2px dashed rgba(232,193,74,0.3);
+      border-radius: 14px;
+      background: var(--surface2);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; cursor: pointer;
+      transition: all 0.2s; position: relative; overflow: hidden;
+    }
+    .img-upload-area:hover { border-color: rgba(232,193,74,0.6); background: rgba(232,193,74,0.05); }
+    .img-upload-area input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .img-upload-icon { font-size: 28px; }
+    .img-upload-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+    .img-upload-hint  { font-size: 11px; color: var(--muted); opacity: 0.7; }
+    .img-preview {
+      width: 100%; height: 140px; border-radius: 14px;
+      object-fit: cover; display: block;
+      border: 2px solid rgba(232,193,74,0.25);
+      position: relative;
+    }
+    .img-preview-wrap { position: relative; }
+    .img-remove-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: rgba(0,0,0,0.7); border: none;
+      border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600;
+      padding: 4px 10px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s;
+    }
+    .img-remove-btn:hover { background: rgba(192,57,43,0.85); }
+
+    /* CREATE BTN */
+    .create-news-btn {
+      width: 100%; padding: 14px;
+      background: rgba(232,193,74,0.10);
+      border: 2px dashed rgba(232,193,74,0.28);
+      border-radius: var(--radius);
+      color: var(--accent); font-family: 'DM Sans', sans-serif;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; margin-bottom: 14px;
+      animation: fadeUp 0.5s 0.05s ease both;
+    }
+    .create-news-btn:hover { background: rgba(232,193,74,0.18); border-color: rgba(232,193,74,0.5); }
+
+    /* CARD */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); margin-bottom: 12px;
+      overflow: hidden; transition: border-color 0.2s, transform 0.2s;
+      animation: fadeUp 0.5s ease both;
+    }
+    .card:hover { border-color: rgba(232,193,74,0.2); transform: translateY(-2px); }
+    .card-image-placeholder {
+      width: 100%; height: 155px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px;
+      background: linear-gradient(135deg, var(--surface2), #1e1008);
+    }
+    .card-body { padding: 14px 16px 16px; }
+    .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .tag {
+      font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 7px;
+      background: rgba(232,193,74,0.15); color: var(--accent);
+    }
+    .tag.red    { background: rgba(192,57,43,0.18); color: #e74c3c; }
+    .tag.green  { background: rgba(46,204,113,0.15); color: var(--green); }
+    .tag.blue   { background: rgba(52,152,219,0.15); color: #3498db; }
+    .tag.purple { background: rgba(155,89,182,0.15); color: #9b59b6; }
+    .card-time { font-size: 12px; color: var(--muted); margin-left: auto; }
+    .card-title { font-size: 17px; font-weight: 600; line-height: 1.35; margin-bottom: 7px; }
+    .card-desc  { font-size: 13px; color: var(--muted); line-height: 1.55; margin-bottom: 12px; }
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .author { display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; flex-shrink: 0;
+    }
+    .author-name { font-size: 13px; font-weight: 500; }
+    .author-role { font-size: 11px; color: var(--muted); }
+    .card-stats { display: flex; gap: 12px; font-size: 12px; color: var(--muted); }
+    .stat { display: flex; align-items: center; gap: 4px; }
+
+    /* ADMIN ACTIONS */
+    .admin-actions {
+      display: flex; gap: 6px;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px dashed rgba(192,57,43,0.2);
+    }
+    .action-btn {
+      flex: 1; padding: 8px; border-radius: 10px; border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .edit-btn   { background: rgba(232,193,74,0.13); color: var(--accent); }
+    .edit-btn:hover   { background: rgba(232,193,74,0.25); }
+    .delete-btn { background: rgba(192,57,43,0.13); color: #e74c3c; }
+    .delete-btn:hover { background: rgba(192,57,43,0.28); }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(20,10,6,0.94); backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(232,193,74,0.12);
+      display: flex; padding: 0 8px;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottom-nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 10px 0; cursor: pointer; gap: 3px;
+      color: var(--muted); font-size: 10px; font-weight: 500; letter-spacing: 0.3px;
+      transition: color 0.2s; border: none; background: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .bottom-nav-item .icon { font-size: 20px; }
+    .bottom-nav-item.active { color: var(--accent); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (min-width: 600px) {
+      .main { max-width: 560px; padding: 0 24px; }
+      .hamburger { display: none !important; }
+    }
+    @media (max-width: 599px) {
+      .desktop-only { display: none; }
+      .hamburger { display: flex; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-logo" href="#">THE <span>MEDELLÍN</span> EMPIRE</a>
+    <div class="nav-actions">
+      <button v-if="!isAdmin" class="nav-btn admin-btn desktop-only" @click="showLogin=true">
+        🔐 Admin belépés
+      </button>
+      <button v-else class="nav-btn admin-logged desktop-only" @click="logout">
+        ⚡ {{ adminUser }} — Kilépés
+      </button>
+      <button class="hamburger" @click="menuOpen=!menuOpen">
+        <span :style="menuOpen?'transform:rotate(45deg) translate(5px,5px)':''"></span>
+        <span :style="menuOpen?'opacity:0':''"></span>
+        <span :style="menuOpen?'transform:rotate(-45deg) translate(5px,-5px)':''"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ADMIN BAR -->
+  <div class="admin-bar" v-if="isAdmin">
+    <div class="admin-bar-left">
+      <span class="admin-badge">ADMIN MÓD</span>
+      <span>Bejelentkezve: <strong>{{ adminUser }}</strong></span>
+    </div>
+    <button class="admin-logout" @click="logout">Kilépés</button>
+  </div>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" :class="{open: menuOpen}">
+    <a class="mobile-nav-link" @click="menuOpen=false">📰 Hírek</a>
+    <a v-if="!isAdmin" class="mobile-nav-link admin-link" @click="showLogin=true; menuOpen=false">🔐 Admin belépés</a>
+    <a v-else class="mobile-nav-link admin-link" @click="logout(); menuOpen=false">🚪 Admin kilépés</a>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-overlay" v-if="showLogin" @click.self="closeLogin">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div class="modal-icon">🔐</div>
+        <h2>Admin Belépés</h2>
+        <p>Csak jogosult személyek léphetnek be</p>
+      </div>
+      <div class="login-error" v-if="loginError">{{ loginError }}</div>
+      <div class="form-group">
+        <label class="form-label">Felhasználónév</label>
+        <input class="form-input" v-model="loginUsername" placeholder="admin" @keyup.enter="doLogin" autofocus />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Jelszó</label>
+        <input class="form-input" type="password" v-model="loginPassword" placeholder="••••••••" @keyup.enter="doLogin" />
+      </div>
+      <button class="btn-full btn-primary" @click="doLogin">Belépés</button>
+      <button class="btn-full btn-cancel" @click="closeLogin">Mégsem</button>
+    </div>
+  </div>
+
+  <!-- EDIT / CREATE MODAL -->
+  <div class="modal-overlay" v-if="showEditModal" @click.self="showEditModal=false">
+    <div class="modal-panel wide">
+      <div class="modal-header">
+        <div class="modal-icon">{{ editingId ? '✏️' : '➕' }}</div>
+        <h2>{{ editingId ? 'Hír Szerkesztése' : 'Új Hír Létrehozása' }}</h2>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cím *</label>
+        <input class="form-input" v-model="editForm.title" placeholder="Hír címe..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Leírás</label>
+        <textarea class="form-textarea" v-model="editForm.desc" placeholder="Rövid leírás..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kategória</label>
+          <select class="form-select" v-model="editForm.tag">
+            <option>Háború</option>
+            <option>Üzlet</option>
+            <option>Hatóság</option>
+            <option>Terület</option>
+            <option>Esemény</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Borítókép</label>
+        <div class="img-preview-wrap" v-if="editForm.imagePreview">
+          <img :src="editForm.imagePreview" class="img-preview" />
+          <button class="img-remove-btn" @click="removeImage">✕ Eltávolítás</button>
+        </div>
+        <div class="img-upload-area" v-else>
+          <input type="file" accept="image/*" @change="onImagePicked" />
+          <div class="img-upload-icon">🖼️</div>
+          <div class="img-upload-label">Kattints vagy húzz ide egy képet</div>
+          <div class="img-upload-hint">JPG, PNG, WEBP — max 10 MB</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Szerző neve</label>
+        <input class="form-input" v-model="editForm.authorName" placeholder="Pl. El Reportero" />
+      </div>
+      <button class="btn-full btn-primary" @click="saveNews" :disabled="!editForm.title.trim()">
+        💾 Mentés
+      </button>
+      <button class="btn-full btn-cancel" @click="showEditModal=false">Mégsem</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="page-title">
+      <h1>THE <em>MEDELLÍN</em> EMPIRE</h1>
+      <p><span class="live-dot"></span>{{ onlineCount.toLocaleString('hu') }} játékos online most</p>
+    </div>
+
+    <div class="breaking">
+      <span class="breaking-badge">BREAKING</span>
+      <p>A Déli Negyed irányítása megváltozott — Los Muertos vs. Vörös Kígyók!</p>
+    </div>
+
+    <button class="create-news-btn" v-if="isAdmin" @click="openCreate">
+      ＋ Új hír létrehozása
+    </button>
+
+    <div
+      v-for="(item, i) in news"
+      :key="item.id"
+      class="card"
+      :style="`animation-delay:${i*0.07}s`"
+    >
+      <img v-if="item.image" :src="item.image" class="card-image-placeholder" style="object-fit:cover;font-size:0;" />
+      <div v-else class="card-image-placeholder">{{ item.emoji }}</div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="tag" :class="item.tagColor">{{ item.tag }}</span>
+          <span class="card-time">{{ item.time }}</span>
+        </div>
+        <div class="card-title">{{ item.title }}</div>
+        <div class="card-desc">{{ item.desc }}</div>
+        <div class="card-footer">
+          <div class="author">
+            <div class="avatar" :style="`background:${item.author.bg}22;color:${item.author.bg}`">{{ item.author.initials }}</div>
+            <div>
+              <div class="author-name">{{ item.author.name }}</div>
+              <div class="author-role">{{ item.author.role }}</div>
+            </div>
+          </div>
+          <div class="card-stats">
+            <span class="stat">👁 {{ item.views }}</span>
+            <span class="stat">💬 {{ item.comments }}</span>
+          </div>
+        </div>
+        <div class="admin-actions" v-if="isAdmin">
+          <button class="action-btn edit-btn"   @click="openEdit(item)">✏️ Szerkesztés</button>
+          <button class="action-btn delete-btn" @click="deleteNews(item.id)">🗑 Törlés</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="news.length===0" style="text-align:center;padding:40px 0;color:var(--muted);font-size:14px;">
+      Nincsenek hírek. Admin módban adj hozzá újakat!
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="bottom-nav-item active">
+      <span class="icon">📰</span>Hírek
+    </button>
+    <button class="bottom-nav-item" v-if="isAdmin" @click="openCreate">
+      <span class="icon">➕</span>Létrehozás
+    </button>
+    <button class="bottom-nav-item" @click="isAdmin ? logout() : (showLogin=true)">
+      <span class="icon">{{ isAdmin ? '⚡' : '🔐' }}</span>{{ isAdmin ? 'Kilépés' : 'Admin' }}
+    </button>
+  </nav>
+
+</div>
+
+<script>
+const { createApp, ref, reactive } = Vue;
+
+createApp({
+  setup() {
+    const isAdmin    = ref(false);
+    const adminUser  = ref('');
+    const showLogin  = ref(false);
+    const menuOpen   = ref(false);
+    const loginUsername = ref('');
+    const loginPassword = ref('');
+    const loginError    = ref('');
+    const onlineCount   = ref(2841);
+
+    const showEditModal = ref(false);
+    const editingId     = ref(null);
+    const editForm = reactive({ title:'', desc:'', tag:'Háború', emoji:'📰', authorName:'', imagePreview: null });
+
+    setInterval(() => { onlineCount.value += Math.floor(Math.random()*7)-3; }, 3000);
+
+    const tagColorMap = { 'Háború':'red','Hatóság':'blue','Terület':'green','Üzlet':'','Esemény':'purple' };
+
+    const news = ref([
+      {
+        id:1, emoji:'🔫', tag:'Háború', tagColor:'red', time:'12p',
+        title:'Vérfürdő a Kikötőnegyedben — Los Muertos átvette az irányítást',
+        desc:'Hajnali összecsapásokban legalább 6 bandatag vesztette életét. A terület mostantól a Los Muertos befolyási övezete.',
+        author:{ name:'El Reportero', role:'Helyszíni tudósító', initials:'ER', bg:'#e74c3c' },
+        views:'14.2e', comments:38
+      },
+      {
+        id:2, emoji:'💰', tag:'Üzlet', tagColor:'', time:'45p',
+        title:'Fekete piac: rekord forgalom a hétvégén',
+        desc:'A városban keringő pénz mennyisége 40%-kal nőtt az elmúlt héten. Elemzők szerint új szállítmány érkezett.',
+        author:{ name:'María Contadora', role:'Gazdasági szerkesztő', initials:'MC', bg:'#e8c14a' },
+        views:'9.8e', comments:21
+      },
+      {
+        id:3, emoji:'🚔', tag:'Hatóság', tagColor:'blue', time:'2ó',
+        title:'Nagyszabású razzia — 12 őrizetbe vétel a Déli Negyedben',
+        desc:'A rendőrség titokban szervezett akcióban csapott le több ismert személyre. Kik az ügynökök?',
+        author:{ name:'Sombra', role:'Névtelen forrás', initials:'S', bg:'#9b59b6' },
+        views:'22.5e', comments:94
+      },
+      {
+        id:4, emoji:'🗺️', tag:'Terület', tagColor:'green', time:'4ó',
+        title:'Új szövetség alakult — Vörös Kígyók és az Északi Klán tárgyalóasztalhoz ültek',
+        desc:'Meglepő fordulat: a két rivális banda képviselői titkos találkozón vett részt. Mi lehet a tét?',
+        author:{ name:'Don Periodista', role:'Főszerkesztő', initials:'DP', bg:'#2ecc71' },
+        views:'31.0e', comments:117
+      }
+    ]);
+
+    let nextId = 100;
+
+    function doLogin() {
+      if (loginUsername.value.trim() === 'admin' && loginPassword.value === 'admin123') {
+        isAdmin.value = true;
+        adminUser.value = 'admin';
+        showLogin.value = false;
+        loginError.value = '';
+        loginUsername.value = '';
+        loginPassword.value = '';
+      } else {
+        loginError.value = 'Hibás felhasználónév vagy jelszó!';
+      }
+    }
+
+    function closeLogin() {
+      showLogin.value = false;
+      loginError.value = '';
+      loginUsername.value = '';
+      loginPassword.value = '';
+    }
+
+    function logout() {
+      isAdmin.value = false;
+      adminUser.value = '';
+    }
+
+    function openCreate() {
+      editingId.value = null;
+      editForm.title = '';
+      editForm.desc = '';
+      editForm.tag = 'Háború';
+      editForm.emoji = '📰';
+      editForm.authorName = 'Admin';
+      editForm.imagePreview = null;
+      showEditModal.value = true;
+    }
+
+    function openEdit(item) {
+      editingId.value = item.id;
+      editForm.title = item.title;
+      editForm.desc = item.desc;
+      editForm.tag = item.tag;
+      editForm.emoji = item.emoji;
+      editForm.authorName = item.author.name;
+      editForm.imagePreview = item.image || null;
+      showEditModal.value = true;
+    }
+
+    function onImagePicked(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => { editForm.imagePreview = ev.target.result; };
+      reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+      editForm.imagePreview = null;
+    }
+
+    function saveNews() {
+      if (!editForm.title.trim()) return;
+      if (editingId.value !== null) {
+        const idx = news.value.findIndex(n => n.id === editingId.value);
+        if (idx !== -1) {
+          news.value[idx] = {
+            ...news.value[idx],
+            title: editForm.title,
+            desc:  editForm.desc,
+            tag:   editForm.tag,
+            tagColor: tagColorMap[editForm.tag] ?? '',
+            emoji: editForm.emoji,
+            image: editForm.imagePreview || null,
+            author: { ...news.value[idx].author, name: editForm.authorName }
+          };
+        }
+      } else {
+        const nm = editForm.authorName || 'Admin';
+        const initials = nm.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,2) || 'AD';
+        news.value.unshift({
+          id: nextId++,
+          emoji: editForm.emoji || '📰',
+          image: editForm.imagePreview || null,
+          tag: editForm.tag,
+          tagColor: tagColorMap[editForm.tag] ?? '',
+          time: 'most',
+          title: editForm.title,
+          desc:  editForm.desc,
+          author: { name: nm, role: 'Adminisztrátor', initials, bg:'#e8c14a' },
+          views: '0', comments: 0
+        });
+      }
+      showEditModal.value = false;
+    }
+
+    function deleteNews(id) {
+      if (confirm('Biztosan törlöd ezt a hírt?')) {
+        news.value = news.value.filter(n => n.id !== id);
+      }
+    }
+
+    return {
+      isAdmin, adminUser, showLogin, menuOpen,
+      loginUsername, loginPassword, loginError,
+      onlineCount, news, showEditModal, editingId, editForm,
+      doLogin, closeLogin, logout, openCreate, openEdit, saveNews, deleteNews,
+      onImagePicked, removeImage
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
